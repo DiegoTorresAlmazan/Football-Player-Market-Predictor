@@ -8,3 +8,6 @@ loguru
 pydantic
 streamlit
 requests
+shap
+pytest
+httpx
