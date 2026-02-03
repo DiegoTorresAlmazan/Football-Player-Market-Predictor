@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import joblib
 import pandas as pd
 import os
+import shap
 
 # 1. setting up the api
 app = FastAPI(
@@ -25,6 +26,11 @@ print("[STARTUP] loading model and encoders...")
 try:
     model = joblib.load(MODEL_PATH)
     encoders = joblib.load(ENCODERS_PATH)
+
+    #initialze the shap explainer
+    #this will help understand the math inside the xgboost model
+    explainer = shap.TreeExplainer(model)
+
     print("[STARTUP] resources loaded.")
 except Exception as e:
     print(f"[STARTUP ERROR] {e}")
@@ -47,7 +53,7 @@ class PlayerStats(BaseModel):
 @app.post("/predict")
 def predict_value(player: PlayerStats):
     try:
-        print(f"[REQUEST] got request for: {player}")
+        # print(f"[REQUEST] got request for: {player}")
         
         # handling pydantic versions, whatever
         try:
@@ -76,15 +82,23 @@ def predict_value(player: PlayerStats):
             'goals', 'assists', 'minutes_played', 'matches_played', 
             'age', 'height_in_cm', 'position', 'sub_position', 'foot'
         ]
-        
+        #ensure correct order
+        X_input = input_data[features]
         # predicting
-        prediction = model.predict(input_data[features])[0]
+        prediction = model.predict(X_input)[0]
+        #get the explanation
+        shap_values = explainer.shap_values(X_input)
+        #organize explanation inot celan dictionary
+        explanation = {}
+        for i, feature_name in enumerate(features):
+            explanation[feature_name] = float(shap_values[0][i])
         
         print(f"[SUCCESS] prediction: EUR {prediction:,.2f}")
         
         return {
             "predicted_market_value_eur": float(prediction),
-            "formatted_value": f"EUR {prediction:,.2f}"
+            "formatted_value": f"EUR {prediction:,.2f}",
+            "explanation": explanation #sends WHY back to user
         }
     
     except Exception as e:
