@@ -23,18 +23,18 @@ if not os.path.exists(MODEL_PATH) or not os.path.exists(ENCODERS_PATH):
 
 print("------------------------------------------------")
 print("[STARTUP] loading model and encoders...")
-try:
-    model = joblib.load(MODEL_PATH)
-    encoders = joblib.load(ENCODERS_PATH)
 
-    #initialze the shap explainer
-    #this will help understand the math inside the xgboost model
-    explainer = shap.TreeExplainer(model)
+model = joblib.load(MODEL_PATH)
+encoders = joblib.load(ENCODERS_PATH)
 
-    print("[STARTUP] resources loaded.")
-except Exception as e:
-    print(f"[STARTUP ERROR] {e}")
-    traceback.print_exc()
+print(f"[DEEBUG] model type: {type(model)}")
+
+#initialze the shap explainer
+#this will help understand the math inside the xgboost model
+explainer = shap.TreeExplainer(model)
+print("explainer created.")
+
+print("[STARTUP] resources loaded.")
 print("------------------------------------------------")
 
 # 3. defining what a player looks like
