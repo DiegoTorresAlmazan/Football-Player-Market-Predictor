@@ -10,12 +10,11 @@ st.write("Enter player stats below to get an estimated market value.")
 col1, col2 = st.columns(2)
 
 with col1:
-    with col1:
     # input fields for numerical values
-        goals = st.number_input("Goals", min_value=0, max_value=1000, value=0)
-        assists = st.number_input("Assists", min_value=0, max_value=1000, value=0)
-        minutes_played = st.number_input("Minutes Played", min_value=0, max_value=80000, value=0)
-        matches_played = st.number_input("Matches Played", min_value=0, max_value=1500, value=0)
+    goals = st.number_input("Goals", min_value=0, max_value=1000, value=0)
+    assists = st.number_input("Assists", min_value=0, max_value=1000, value=0)
+    minutes_played = st.number_input("Minutes Played", min_value=0, max_value=80000, value=0)
+    matches_played = st.number_input("Matches Played", min_value=0, max_value=1500, value=0)
 
 with col2:
     age = st.number_input("Age", min_value=15, max_value=45, value=24)
