@@ -54,8 +54,9 @@ if st.button("Predict Value"):
 
     try:
         # send request to api
-        response = requests.post("http://127.0.0.1:8000/predict", json=payload)
-        
+        #response = requests.post("http://127.0.0.1:8000/predict", json=payload)
+        #link to deployed api:
+        response = requests.post("https://football-player-market-value-predictor.onrender.com/predict", json=payload)
         if response.status_code == 200:
             result = response.json()
             value = result['formatted_value']
