@@ -1,0 +1,20 @@
+# python junk
+__pycache__/
+*.py[cod]
+*$py.class
+
+# environments
+venv/
+env/
+.env
+
+# ide settings
+.vscode/
+.idea/
+
+# huge data files 
+data/raw/*.csv
+
+# os junk
+.DS_Store
+Thumbs.db
