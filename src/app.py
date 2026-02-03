@@ -52,9 +52,8 @@ if st.button("Predict Value"):
     }
 
     try:
-        
         #link to deployed api:
-        response = requests.post("https://football-player-market-value-predictor.onrender.com", json=payload)
+        response = requests.post("https://football-player-market-value-predictor.onrender.com/predict", json=payload)
         if response.status_code == 200:
             result = response.json()
             value = result['formatted_value']
