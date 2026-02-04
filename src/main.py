@@ -17,24 +17,38 @@ app = FastAPI(
 MODEL_PATH = "models/price_predictor.pkl"
 ENCODERS_PATH = "models/encoders.pkl"
 
-# quick check to make sure files exist
-if not os.path.exists(MODEL_PATH) or not os.path.exists(ENCODERS_PATH):
-    raise RuntimeError("[ERROR] models missing. run src/training.py first.")
+# global variable for explainer
+explainer = None
 
 print("------------------------------------------------")
 print("[STARTUP] loading model and encoders...")
 
-model = joblib.load(MODEL_PATH)
-encoders = joblib.load(ENCODERS_PATH)
+# fail fast if files are missing
+if not os.path.exists(MODEL_PATH):
+    raise RuntimeError(f"critical error: {MODEL_PATH} not found.")
 
-print(f"[DEEBUG] model type: {type(model)}")
+try:
+    model = joblib.load(MODEL_PATH)
+    encoders = joblib.load(ENCODERS_PATH)
+    print(f"[DEBUG] model loaded. type: {type(model)}")
 
-#initialze the shap explainer
-#this will help understand the math inside the xgboost model
-explainer = shap.TreeExplainer(model)
-print("explainer created.")
+    # --- SAFE SHAP LOADING ---
+    try:
+        print("[STARTUP] attempting to initialize shap explainer...")
+        # try the standard way
+        explainer = shap.TreeExplainer(model)
+        print("[STARTUP] shap explainer loaded successfully.")
+    except Exception as e:
+        print(f"[WARNING] shap failed to load: {e}")
+        print("[WARNING] app will run without explainability features.")
+        explainer = None
+    # -------------------------
 
-print("[STARTUP] resources loaded.")
+except Exception as e:
+    print(f"[CRITICAL ERROR] failed to load model: {e}")
+    traceback.print_exc()
+    raise e
+
 print("------------------------------------------------")
 
 # 3. defining what a player looks like
@@ -53,9 +67,7 @@ class PlayerStats(BaseModel):
 @app.post("/predict")
 def predict_value(player: PlayerStats):
     try:
-        # print(f"[REQUEST] got request for: {player}")
-        
-        # handling pydantic versions, whatever
+        # handling pydantic versions
         try:
             player_data = player.model_dump() # v2
         except AttributeError:
@@ -64,45 +76,45 @@ def predict_value(player: PlayerStats):
         # making it a dataframe
         input_data = pd.DataFrame([player_data])
         
-        # preprocess: mapping text to numbers with our dict
+        # preprocess: mapping text to numbers
         cat_cols = ['position', 'sub_position', 'foot']
-        
         for col in cat_cols:
-            # grab the dict for this column
             mapping = encoders.get(col, {})
-            
-            # get the value as a string
             val = str(input_data[col].iloc[0])
-            
-            # look it up, default to 0 if unknown
             input_data[col] = mapping.get(val, 0)
         
-        # making sure columns match training order
+        # ensuring columns match training order
         features = [
             'goals', 'assists', 'minutes_played', 'matches_played', 
             'age', 'height_in_cm', 'position', 'sub_position', 'foot'
         ]
-        #ensure correct order
         X_input = input_data[features]
+        
         # predicting
         prediction = model.predict(X_input)[0]
-        #get the explanation
-        shap_values = explainer.shap_values(X_input)
-        #organize explanation inot celan dictionary
+        
+        # --- SAFE EXPLANATION GENERATION ---
         explanation = {}
-        for i, feature_name in enumerate(features):
-            explanation[feature_name] = float(shap_values[0][i])
+        if explainer:
+            try:
+                shap_values = explainer.shap_values(X_input)
+                for i, feature_name in enumerate(features):
+                    explanation[feature_name] = float(shap_values[0][i])
+            except Exception as e:
+                print(f"[ERROR] failed to generate explanation: {e}")
+        else:
+            explanation = {"error": "shap explainer not available"}
+        # -----------------------------------
         
         print(f"[SUCCESS] prediction: EUR {prediction:,.2f}")
         
         return {
             "predicted_market_value_eur": float(prediction),
             "formatted_value": f"EUR {prediction:,.2f}",
-            "explanation": explanation #sends WHY back to user
+            "explanation": explanation
         }
     
     except Exception as e:
-        # printing error
         print("[CRITICAL ERROR] api crashed:")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
