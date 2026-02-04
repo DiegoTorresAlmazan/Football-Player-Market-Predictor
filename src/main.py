@@ -35,7 +35,8 @@ try:
     # --- SAFE SHAP LOADING ---
     try:
         print("[STARTUP] attempting to initialize shap explainer...")
-        # try the standard way
+
+        booster = model.get_booster()  # get the underlying xgboost Booster
         explainer = shap.TreeExplainer(model)
         print("[STARTUP] shap explainer loaded successfully.")
     except Exception as e:
