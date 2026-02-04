@@ -4,7 +4,7 @@ An end-to-end Machine Learning pipeline that predicts the market value of footba
 It features a FastAPI backend, a Streamlit dashboard, and SHAP explainability to show why a player is valued at a certain price.
 
 **Live Demo:**
-check out the deployed project here: [football market value predictor](https://football-player-market-predictor-nr89v3n7jub27pxztdubr3.streamlit.app/)
+check out the deployed project here [football market value predictor](https://football-player-market-predictor-nr89v3n7jub27pxztdubr3.streamlit.app/)
 
 ## Features
 
